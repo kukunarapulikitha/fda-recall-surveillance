@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest tests/ *)",
+      "Bash(python scripts/run_daily.py*)",
+      "Bash(python scripts/run_backfill.py*)",
+      "Bash(python -m src.scheduler*)",
+      "Bash(streamlit run src/monitoring/app.py*)",
+      "Bash(docker compose *)",
+      "Bash(pip install *)",
+      "Bash(alembic *)",
+      "Bash(python -c *)"
+    ],
+    "deny": []
+  }
+}

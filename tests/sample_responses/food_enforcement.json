@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "disclaimer": "Do not rely on openFDA to make decisions regarding medical care.",
+    "results": {
+      "skip": 0,
+      "limit": 1,
+      "total": 1
+    }
+  },
+  "results": [
+    {
+      "classification": "Class I",
+      "center_classification_date": "20260301",
+      "status": "Ongoing",
+      "distribution_pattern": "CA, NV, AZ, OR, WA",
+      "product_description": "Organic Peanut Butter Crunch, 16oz jars",
+      "code_info": "Lot# PB2026-A, Best By 06/2027",
+      "recalling_firm": "Healthy Snacks LLC",
+      "reason_for_recall": "Product may contain undeclared tree nuts (almonds), posing a risk to individuals with tree nut allergies.",
+      "product_quantity": "25,000 jars",
+      "voluntary_mandated": "Voluntary: Firm Initiated",
+      "report_date": "20260305",
+      "recall_initiation_date": "20260228",
+      "recall_number": "F-0300-2026",
+      "event_id": "95000",
+      "product_type": "Food",
+      "initial_firm_notification": "Press Release",
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "United States",
+      "postal_code": "90001",
+      "openfda": {}
+    }
+  ]
+}

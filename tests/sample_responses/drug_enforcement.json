@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "disclaimer": "Do not rely on openFDA to make decisions regarding medical care.",
+    "terms": "https://open.fda.gov/terms/",
+    "license": "https://open.fda.gov/license/",
+    "last_updated": "2026-04-01",
+    "results": {
+      "skip": 0,
+      "limit": 1,
+      "total": 1
+    }
+  },
+  "results": [
+    {
+      "classification": "Class II",
+      "center_classification_date": "20260115",
+      "status": "Ongoing",
+      "distribution_pattern": "Nationwide",
+      "product_description": "Metformin HCl Extended-Release Tablets, 500mg, 100 count bottles",
+      "code_info": "Lot# M2024-001, Exp 12/2026",
+      "recalling_firm": "Test Pharmaceutical Inc",
+      "reason_for_recall": "Failed Dissolution Specifications: Out of specification dissolution results at the 10 hour time point.",
+      "product_quantity": "50,000 bottles",
+      "voluntary_mandated": "Voluntary: Firm Initiated",
+      "report_date": "20260110",
+      "recall_initiation_date": "20260105",
+      "recall_number": "D-0100-2026",
+      "event_id": "91000",
+      "product_type": "Drugs",
+      "initial_firm_notification": "Letter",
+      "city": "Springfield",
+      "state": "IL",
+      "country": "United States",
+      "postal_code": "62701",
+      "openfda": {
+        "application_number": ["ANDA012345"],
+        "brand_name": ["METFORMIN HCL ER"],
+        "generic_name": ["METFORMIN HYDROCHLORIDE"],
+        "manufacturer_name": ["Test Pharmaceutical Inc"],
+        "product_ndc": ["12345-678-90"],
+        "product_type": ["HUMAN PRESCRIPTION DRUG"],
+        "route": ["ORAL"],
+        "substance_name": ["METFORMIN HYDROCHLORIDE"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fda_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fda_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-fda_recalls}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fda_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  monitoring:
+    build: .
+    ports:
+      - "8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    command: streamlit run src/monitoring/app.py --server.port 8501 --server.address 0.0.0.0
+
+volumes:
+  postgres_data:

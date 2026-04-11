@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "disclaimer": "Do not rely on openFDA to make decisions regarding medical care.",
+    "results": {
+      "skip": 0,
+      "limit": 1,
+      "total": 1
+    }
+  },
+  "results": [
+    {
+      "product_code": "FOZ",
+      "event_date_initiated": "20260201",
+      "event_date_created": "20260205",
+      "event_date_posted": "20260210",
+      "event_date_terminated": "",
+      "recall_status": "Ongoing",
+      "res_event_number": "Z-0200-2026",
+      "cfres_id": "200100",
+      "recalling_firm": "MedDevice Corp",
+      "reason_for_recall": "Device may produce inaccurate blood glucose readings when used at high altitudes.",
+      "product_description": "BloodCheck Pro Glucose Monitor, Model BC-500",
+      "code_info": "Serial numbers BC500-001 through BC500-5000",
+      "product_quantity": "5,000 units",
+      "distribution_pattern": "Nationwide and international distribution.",
+      "voluntary_mandated": "Voluntary: Firm Initiated",
+      "initial_firm_notification": "Letter",
+      "event_type": "Class II",
+      "city": "San Jose",
+      "state": "CA",
+      "country": "United States",
+      "postal_code": "95110",
+      "k_numbers": ["K240001"],
+      "openfda": {
+        "device_name": "System, Test, Blood Glucose, Over The Counter",
+        "medical_specialty_description": "Clinical Chemistry",
+        "regulation_number": "862.1345"
+      },
+      "root_cause_description": "Software Design"
+    }
+  ]
+}
