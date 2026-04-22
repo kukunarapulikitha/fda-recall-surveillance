@@ -1,6 +1,6 @@
 # FDA Drug Recall & Safety Alert Surveillance System
 
-An automated data pipeline that ingests FDA recall data from the OpenFDA API and FDA website, validates and deduplicates records, stores them in PostgreSQL with full historical tracking, and provides a data quality monitoring dashboard.
+An automated data pipeline that ingests FDA recall data from the OpenFDA API and FDA website, validates and deduplicates records, stores them in PostgreSQL with full historical tracking, and provides a data quality monitoring dashboard. The system also includes an analytics layer for recall pattern analysis, risk scoring, and executive reporting.
 
 ## Architecture
 
@@ -86,22 +86,40 @@ fda-recall-surveillance/
 │   │   ├── pipeline.py               # Orchestrator (fetch->validate->dedupe->upsert)
 │   │   └── backfill.py               # Historical data loader
 │   ├── scheduler.py                  # APScheduler daily cron
+│   ├── analytics/
+│   │   ├── queries.py                # DataFrame loaders for recall/firm tables
+│   │   ├── categorize.py             # Therapeutic area / device / food / reason buckets
+│   │   ├── temporal.py               # Monthly, quarterly, seasonal trends; spikes
+│   │   ├── risk_scoring.py           # 0-100 risk score + tier (Critical/High/Medium/Low)
+│   │   ├── high_risk.py              # Manufacturer + product-category rankings
+│   │   ├── correlation.py            # Geography and statistical tests
+│   │   └── reports.py                # Markdown executive summary generator
 │   └── monitoring/
 │       ├── app.py                    # Streamlit dashboard entry
 │       └── pages/
 │           ├── pipeline_health.py    # Run history, success rates
 │           ├── data_quality.py       # Null rates, anomaly detection
-│           └── coverage.py           # Heatmap, gap detection
+│           ├── coverage.py           # Heatmap, gap detection
+│           ├── analytics_overview.py # Categorization + temporal patterns
+│           ├── risk_dashboard.py     # Manufacturer + category rankings
+│           └── executive_summary.py  # Rendered markdown exec report
 ├── scripts/
 │   ├── init_db.sql                   # DDL (auto-runs via Docker)
 │   ├── run_daily.py                  # CLI: daily pipeline
-│   └── run_backfill.py               # CLI: historical backfill
+│   ├── run_backfill.py               # CLI: historical backfill
+│   └── generate_report.py            # CLI: executive summary markdown
 ├── tests/
 │   ├── test_fda_client.py            # API client tests
 │   ├── test_fda_scraper.py           # Scraper tests
 │   ├── test_normalizer.py            # Normalizer tests
 │   ├── test_validator.py             # Validator tests
 │   ├── test_pipeline.py              # Deduplication tests
+│   ├── test_analytics_categorize.py  # Categorization tests
+│   ├── test_analytics_risk_scoring.py # Risk score tests
+│   ├── test_analytics_temporal.py    # Temporal pattern tests
+│   ├── test_analytics_high_risk.py   # Manufacturer ranking tests
+│   ├── test_analytics_reports.py     # Executive report tests
+│   ├── test_analytics_correlation.py # Correlation / chi-square tests
 │   └── sample_responses/             # Fixture JSON from FDA API
 ├── docker-compose.yml
 ├── Dockerfile
@@ -337,6 +355,136 @@ All settings are in `.env`:
 | `LOG_LEVEL` | `INFO` | Logging level |
 
 Get a free API key at [https://open.fda.gov/apis/authentication/](https://open.fda.gov/apis/authentication/).
+
+## Analytics Layer
+
+The `src/analytics/` package adds recall pattern analysis and risk scoring on top of the ingestion pipeline.
+
+### Categorization
+
+Each recall is bucketed into three derived categories:
+
+| Category | Source fields | Buckets |
+|----------|---------------|---------|
+| `therapeutic_area` | generic_name, brand_name, substance_name, reason | Cardiovascular, Diabetes, Anti-Infective, Oncology, Pain, Psychiatric, Respiratory, GI, Dermatological, Ophthalmic, Hormonal, Vaccine, Supplement, Other |
+| `product_category` | route (drugs), product_description (devices/food) | Cardiac Devices, Surgical, Imaging, Dairy, Meat, Produce, etc. |
+| `reason_category` | reason_for_recall | Contamination, Mislabeling, Manufacturing Defect, Out of Specification, Packaging, Adverse Event, Malfunction, Sterility, Dosing |
+
+### Risk Scoring
+
+Every recall gets a 0–100 risk score computed from:
+
+| Dimension | Weight |
+|-----------|--------|
+| Classification (Class I/II/III) | 8–40 pts |
+| Distribution reach (states exposed) | 7–25 pts |
+| Product quantity (log-scaled) | 0–20 pts |
+| Status multiplier (Ongoing / Terminated) | 0.4–1.0× |
+
+Scores bucket into four tiers: **Critical (≥70)**, **High (50–69)**, **Medium (30–49)**, **Low (<30)**.
+
+### High-Risk Identification
+
+The `HighRiskIdentifier` ranks manufacturers and product categories by a composite
+**priority score** (recall volume × average severity). A `repeat_offenders` view
+flags firms with ≥2 Class I recalls — the most concerning surveillance signal.
+
+### Temporal Analysis
+
+- Monthly / quarterly / yearly counts (optionally split by product type)
+- Seasonal profile (Winter / Spring / Summer / Fall)
+- Linear trend slope (recalls per month over time)
+- Z-score spike detection on monthly counts
+
+### Correlation Analysis
+
+Uses firm state and distribution pattern as proxies for demographic reach:
+
+- Cross-tab: recall type × state
+- Cross-tab: classification × distribution reach bucket
+- χ² test: reason category vs classification
+- Pearson r: distribution reach vs risk score
+
+### Executive Summary Report
+
+```bash
+# Print a markdown exec summary to stdout (default: last 365 days)
+python scripts/generate_report.py
+
+# Filter to drugs only, write to file
+python scripts/generate_report.py --product-type Drugs -o drugs_report.md
+
+# Custom date range
+python scripts/generate_report.py --start 2023-01-01 --end 2024-12-31
+```
+
+The report includes summary KPIs, auto-generated plain-English insights, top
+manufacturers / categories, seasonal patterns, trend direction, and statistical
+findings (χ² independence test, Pearson correlation).
+
+### Analytics Dashboard Pages
+
+The Streamlit app (`streamlit run src/monitoring/app.py`) now includes three
+additional pages:
+
+- **Recall Pattern Analysis** — categorization breakdowns, temporal charts, risk tier pie
+- **High-Risk Rankings** — top manufacturers and product categories with filters
+- **Executive Summary** — rendered exec report with a markdown download button
+
+Screenshots below are captured against a real backfill of **1,050 recalls** loaded
+from the OpenFDA API (Drugs + Devices + Food, Jan–Apr 2024).
+
+#### Recall Pattern Analysis — Categorization
+
+Stacked bar of recalls by product type × classification, top therapeutic areas
+(Drugs), and top reason categories colored by Class I %.
+
+![Recall Pattern Analysis — Categorization](docs/images/task2/01-recall-patterns-categorization.png)
+
+#### Recall Pattern Analysis — Temporal Patterns
+
+Monthly / quarterly / seasonal trends, month-of-year profile with std-dev error
+bars, and z-score anomaly detection.
+
+![Recall Pattern Analysis — Temporal Patterns](docs/images/task2/02-recall-patterns-temporal.png)
+
+#### Recall Pattern Analysis — Severity & Risk
+
+Risk tier pie chart (Critical / High / Medium / Low), risk score histogram, and
+classification × distribution-reach heatmap.
+
+![Recall Pattern Analysis — Severity & Risk](docs/images/task2/03-recall-patterns-severity.png)
+
+#### High-Risk Rankings
+
+Ranks manufacturers and product categories by composite priority score
+(recall volume × average severity), with a repeat-offenders view for firms with
+multiple Class I recalls.
+
+![High-Risk Rankings](docs/images/task2/04-high-risk-rankings.png)
+
+#### Executive Summary
+
+Plain-English rollup with summary KPIs, auto-generated insights, top
+manufacturers / categories, seasonal patterns, and statistical findings.
+Downloadable as a standalone markdown report.
+
+![Executive Summary](docs/images/task2/05-executive-summary.png)
+
+### Python API
+
+```python
+from src.analytics.queries import load_recalls
+from src.analytics.categorize import RecallCategorizer
+from src.analytics.risk_scoring import RiskScorer
+from src.analytics.reports import ExecutiveReport
+
+df = load_recalls()
+df = RecallCategorizer().categorize(df)
+df = RiskScorer().score(df)
+
+print(ExecutiveReport().render_markdown(df))
+```
 
 ## Verified Results
 

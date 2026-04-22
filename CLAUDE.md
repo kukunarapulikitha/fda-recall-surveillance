@@ -28,8 +28,11 @@ python scripts/run_daily.py --skip-website
 # Run historical backfill
 python scripts/run_backfill.py --start-year 2020
 
-# Start monitoring dashboard
+# Start monitoring + analytics dashboard
 streamlit run src/monitoring/app.py
+
+# Generate executive summary report (markdown)
+python scripts/generate_report.py --start 2023-01-01 -o report.md
 
 # Start scheduler (daily 6 AM cron)
 python -m src.scheduler
@@ -49,7 +52,8 @@ docker exec fda-recall-surveillance-postgres-1 psql -U fda_user -d fda_recalls -
 - **src/ingestion/pipeline.py** — Orchestrator: fetch -> normalize -> validate -> dedupe -> upsert
 - **src/ingestion/backfill.py** — Historical loader (month-by-month chunking)
 - **src/scheduler.py** — APScheduler BackgroundScheduler
-- **src/monitoring/** — Streamlit dashboard (3 pages)
+- **src/analytics/** — Categorization, risk scoring, temporal/correlation analysis, exec report
+- **src/monitoring/** — Streamlit dashboard (6 pages: 3 monitoring + 3 analytics)
 
 ## Coding Conventions
 
