@@ -78,11 +78,7 @@ def render():
         "validation_failures", "duration_seconds",
     ]
     st.dataframe(
-        runs_df[display_cols].style.applymap(
-            lambda v: "background-color: #d4edda" if v == "success"
-            else "background-color: #f8d7da" if v == "failed" else "",
-            subset=["status"],
-        ),
+        runs_df[display_cols],
         use_container_width=True,
         height=400,
     )
