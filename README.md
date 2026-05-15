@@ -424,12 +424,23 @@ findings (χ² independence test, Pearson correlation).
 
 ### Analytics Dashboard Pages
 
-The Streamlit app (`streamlit run src/monitoring/app.py`) now includes three
-additional pages:
+The Streamlit app (`streamlit run src/monitoring/app.py`) now includes **8 pages** across four sections:
 
+**Explore**
+- **Search & Explore** — full-text keyword search + point-and-click filters (product type, classification, state); paginated recall cards with colour-coded severity badges; CSV export
+
+**Monitoring**
+- **Pipeline Health** — run history with success/fail trends, duration scatter, error log viewer
+- **Data Quality** — null rates per column, validation failure trends, anomaly detection (2σ)
+- **Coverage** — monthly heatmap by product type, gap detection, staleness checks
+
+**Analytics**
 - **Recall Pattern Analysis** — categorization breakdowns, temporal charts, risk tier pie
 - **High-Risk Rankings** — top manufacturers and product categories with filters
 - **Executive Summary** — rendered exec report with a markdown download button
+
+**Alerts**
+- **Alerts & Subscriptions** — create subscriptions (email + webhook), view notification history
 
 Screenshots below are captured against a real backfill of **1,050 recalls** loaded
 from the OpenFDA API (Drugs + Devices + Food, Jan–Apr 2024).
@@ -485,6 +496,91 @@ df = RiskScorer().score(df)
 
 print(ExecutiveReport().render_markdown(df))
 ```
+
+## Alert System
+
+The `src/alerts/` package provides subscription-based notifications that fire automatically whenever the ingestion pipeline inserts new recalls.
+
+### How It Works
+
+1. **Create a subscription** — via the dashboard ("Alerts & Subscriptions" page) or directly with the Python API.
+2. **Filters** — match on product type, classification, state, keywords, or minimum risk score (empty list = match all).
+3. **Dispatch** — the alert engine runs after each pipeline ingestion and sends matching recalls through enabled channels.
+
+### Notification Channels
+
+| Channel | How to activate |
+|---------|----------------|
+| **Email (SMTP)** | Set `SMTP_HOST` in `.env`; enable "email" on the subscription |
+| **Webhook (HTTP POST)** | Provide a URL on the subscription; enable "webhook" |
+
+### Email Configuration
+
+```env
+ALERTS_ENABLED=true
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USE_TLS=true
+SMTP_USERNAME=you@gmail.com
+SMTP_PASSWORD=your-app-password
+ALERT_EMAIL_FROM=fda-alerts@yourdomain.com
+```
+
+### Webhook Payload
+
+```json
+{
+  "event": "fda_recall_alert",
+  "subscription": "Class I Drug Alerts",
+  "recall": {
+    "recall_number": "D-0179-2024",
+    "product_type": "Drugs",
+    "classification": "Class I",
+    "recalling_firm": "Acme Pharma Inc.",
+    "reason_for_recall": "Presence of foreign particulate matter",
+    "report_date": "2024-03-15",
+    "state": "CA",
+    "status": "Ongoing"
+  }
+}
+```
+
+### Python API
+
+```python
+from src.models.base import SessionLocal
+from src.alerts.subscriptions import create_subscription
+from src.alerts.engine import AlertEngine
+
+session = SessionLocal()
+
+# Create a subscription
+sub = create_subscription(
+    session,
+    name="Class I Drug Alerts",
+    email="team@example.com",
+    webhook_url="https://hooks.slack.com/…",
+    product_types=["Drugs"],
+    classifications=["Class I"],
+    keywords=["contamination", "sterility"],
+    min_risk_score=50,
+    email_enabled=True,
+    webhook_enabled=True,
+)
+
+# Manually evaluate a batch of recalls
+engine = AlertEngine(session)
+engine.process_recalls(recall_dicts)
+```
+
+### Database Tables
+
+| Table | Description |
+|-------|-------------|
+| `alert_subscriptions` | Subscriber profiles with filter criteria |
+| `alert_notifications` | Per-recall, per-channel dispatch log (sent / failed) |
+
+---
 
 ## Verified Results
 

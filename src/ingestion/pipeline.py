@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
+from src.alerts.engine import evaluate_and_alert
 from src.config import settings
 from src.ingestion.fda_client import FDAClient
 from src.ingestion.fda_scraper import FDAScraper
@@ -139,6 +140,13 @@ class RecallPipeline:
             # Update firm aggregates
             self._update_firms(deduped)
 
+            # Trigger alert engine for newly inserted records
+            if inserted > 0:
+                try:
+                    evaluate_and_alert(self.session, deduped)
+                except Exception as alert_err:
+                    logger.warning("Alert engine error (non-fatal): %s", alert_err)
+
             self._finish_log(log, stats, time.time() - start_time)
 
         except Exception as e:
@@ -180,6 +188,13 @@ class RecallPipeline:
             inserted, updated = self._upsert_recalls(deduped)
             stats.records_inserted = inserted
             stats.records_updated = updated
+
+            # Trigger alert engine for newly inserted website records
+            if inserted > 0:
+                try:
+                    evaluate_and_alert(self.session, deduped)
+                except Exception as alert_err:
+                    logger.warning("Alert engine error (non-fatal): %s", alert_err)
 
             self._finish_log(log, stats, time.time() - start_time)
 

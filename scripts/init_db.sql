@@ -87,3 +87,44 @@ CREATE TABLE IF NOT EXISTS ingestion_logs (
 
 CREATE INDEX IF NOT EXISTS idx_ingestion_logs_status ON ingestion_logs(status);
 CREATE INDEX IF NOT EXISTS idx_ingestion_logs_started ON ingestion_logs(started_at DESC);
+
+-- ── Alert System ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS alert_subscriptions (
+    id               BIGSERIAL PRIMARY KEY,
+    name             VARCHAR(200) NOT NULL,
+    email            VARCHAR(500),
+    webhook_url      TEXT,
+    product_types    JSONB DEFAULT '[]'::jsonb,
+    classifications  JSONB DEFAULT '[]'::jsonb,
+    keywords         JSONB DEFAULT '[]'::jsonb,
+    states           JSONB DEFAULT '[]'::jsonb,
+    min_risk_score   INT DEFAULT 0,
+    email_enabled    BOOLEAN DEFAULT true,
+    webhook_enabled  BOOLEAN DEFAULT false,
+    active           BOOLEAN DEFAULT true,
+    created_at       TIMESTAMPTZ DEFAULT now(),
+    updated_at       TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_subs_active ON alert_subscriptions(active);
+CREATE INDEX IF NOT EXISTS idx_alert_subs_email ON alert_subscriptions(email);
+
+CREATE TABLE IF NOT EXISTS alert_notifications (
+    id                    BIGSERIAL PRIMARY KEY,
+    subscription_id       BIGINT NOT NULL REFERENCES alert_subscriptions(id) ON DELETE CASCADE,
+    recall_number         VARCHAR(50) NOT NULL,
+    recall_classification VARCHAR(20),
+    recall_firm           VARCHAR(500),
+    recall_product_type   VARCHAR(20),
+    channel               VARCHAR(20) NOT NULL,
+    status                VARCHAR(20) DEFAULT 'pending',
+    error_message         TEXT,
+    sent_at               TIMESTAMPTZ,
+    created_at            TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_notif_sub ON alert_notifications(subscription_id);
+CREATE INDEX IF NOT EXISTS idx_alert_notif_recall ON alert_notifications(recall_number);
+CREATE INDEX IF NOT EXISTS idx_alert_notif_status ON alert_notifications(status);
+CREATE INDEX IF NOT EXISTS idx_alert_notif_created ON alert_notifications(created_at DESC);

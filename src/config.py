@@ -21,6 +21,21 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
 
+    # ── Alert system ──────────────────────────────────────────────────────────
+    # Set ALERTS_ENABLED=true to activate alert evaluation after each ingestion.
+    ALERTS_ENABLED: bool = True
+
+    # SMTP (email channel) — leave SMTP_HOST empty to disable email alerts.
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USE_TLS: bool = True          # True → STARTTLS on port 587; False → SSL on port 465
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    ALERT_EMAIL_FROM: str = "fda-alerts@example.com"
+
+    # Webhook timeout seconds (used by the webhook channel)
+    ALERT_WEBHOOK_TIMEOUT: int = 15
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
